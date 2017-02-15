@@ -1,11 +1,41 @@
 #import "../CC.h"
 
-%hook CCUILowPowerModeSetting
+static BOOL overrideInternal;
 
-+ (bool)isInternalButton
+extern "C" BOOL MGGetBoolAnswer(CFStringRef);
+
+%hookf(BOOL, MGGetBoolAnswer, CFStringRef key)
 {
-	return NO;
+	#define k(key_) CFEqual(key, CFSTR(key_))
+	if (overrideInternal && k("apple-internal-install"))
+			return YES;
+	return %orig;
 }
+
+// @Andywiik AndrewWiik 
+%hook CCUIButtonStackPagingView
+
+
+- (void)_organizeButtonsInPages 
+{
+	overrideInternal = YES;
+	%orig;
+	overrideInternal = NO;
+}
+
+-(void)setPagingAxis:(NSInteger)arg1 
+{
+	%orig(0);
+}
+
+-(NSInteger)pagingAxis 
+{
+	return 0;
+}
+
+%end
+
+%hook CCUILowPowerModeSetting
 
 + (bool)isSupported:(int)arg1
 {
@@ -27,7 +57,7 @@
 
 - (UIImage *)glyphImageForState:(UIControlState)state
 {
-	return [UIImage imageNamed:@"pinDot@2x.png" inBundle:[NSBundle bundleWithPath:@"/Applications/CoreAuthUI.app/"]];
+	return [UIImage imageNamed:@"Shortcut-Battery" inBundle:[NSBundle bundleWithPath:@"/Applications/Preferences.app/"]];
 }
 
 
